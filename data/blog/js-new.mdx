@@ -1,0 +1,91 @@
+---
+title: 'JS之手写 new'
+date: '2025-030-10'
+tags: ['前端', '面试', '手写']
+draft: false
+summary: new 做了什么？如何写一个属于自己的 new
+---
+
+# 手写 new
+
+回想一下，我们是怎么使用 `new` 关键字的？
+
+```javascript
+function Cat(name) {
+  this.name = name
+}
+
+Cat.prototype.sayHello = function () {
+  console.log(`hello！${this.name}`)
+}
+
+const c = new Cat('小N')
+c.sayHello() // hello！小N
+```
+
+简单来说，`new` 做了3个关键事
+
+1. 创建一个空对象
+2. 运行函数，并且绑定 `this`
+3. 返回这个对象
+
+那么有了以上的思路，我们来实现一个简单版本的 `new`
+
+```javascript
+function myNew(func, ...rest) {
+  const obj = {} // 创建一个空对象
+  func.apply(obj, rest)
+  return obj
+}
+// 现在我们来测试一下
+function Cat(name) {
+  this.name = name
+}
+
+const c2 = myNew(Cat, '小N')
+console.log(c2)
+```
+
+可以看出来成功了，但是如果 `Cat` 有添加方法呢？
+
+```javascript
+function myNew(func, ...rest) {
+  const obj = {} // 创建一个空对象
+  func.apply(obj, rest)
+  return obj
+}
+// 现在我们来测试一下
+function Cat(name) {
+  this.name = name
+}
+
+Cat.prototype.sayHello = function () {
+  console.log(`hello！${this.name}`)
+}
+
+const c2 = myNew(Cat, '小N')
+c2.sayHello()
+```
+
+发现报错了（没有 `sayHello`）这个方法，这是因为我们的原型链并没有绑定上，所以需要完善我们的 `new`
+
+```javascript
+function myNew(func, ...rest) {
+  let obj = Object.create(func.prototype) // 原型链
+  let ret = func.apply(obj, rest)
+  return obj
+}
+
+function Cat(name) {
+  this.name = name
+}
+
+Cat.prototype.sayHello = function () {
+  console.log(`hello！${this.name}`)
+}
+
+const c2 = myNew(Cat, '小N')
+c2.sayHello()
+```
+
+再次运行，发现成功了，我们来看一下 log 一下 `c2.__proto__`，可以很明显的看到，原型上有 `sayHello` 的方法。
