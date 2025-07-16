@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-require-imports */
 const { withContentlayer } = require('next-contentlayer2')
 
 const withBundleAnalyzer = require('@next/bundle-analyzer')({
@@ -74,8 +75,8 @@ module.exports = () => {
     images: {
       remotePatterns: [
         {
-          protocol: 'https',
-          hostname: 'picsum.photos',
+          protocol: 'http',
+          hostname: 'asset.minorn.cn',
         },
       ],
       unoptimized,
