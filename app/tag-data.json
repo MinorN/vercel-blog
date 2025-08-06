@@ -1,5 +1,6 @@
 {
-  "v8": 1,
+  "docker": 1,
   "javascript": 1,
-  "typescript": 9
+  "typescript": 9,
+  "v8": 1
 }
