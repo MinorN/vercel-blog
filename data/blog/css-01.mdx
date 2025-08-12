@@ -1,0 +1,179 @@
+---
+title: '如何实现样式隔离？'
+date: '2025-08-10'
+tags: ['css']
+draft: false
+summary: 介绍了 CSS 样式隔离的概念和实现方法。
+---
+
+# 如何实现样式隔离？
+
+## 什么是样式隔离？
+
+不同组件、模块之间维护自己的样式，不影响其他组件、模块的样式
+
+因为原生的 `css` 中，不支持局部作用域，所以说需要实现样式隔离
+
+## 为什么需要样式隔离
+
+- 防止全局污染
+- 依赖管理混乱
+- 顺序、层叠都可能会导致样式冲突
+
+这样就会导致 `css` 急速膨胀并且难以维护，牵一发而动全身
+
+## 如何实现样式隔离
+
+### `BEM` 命名规则
+
+只是一个命名规则，`class` 类目按照规定的方式进行命名
+
+`Block--Element__Modifier` 按照这个规则（块--元素**修饰符），例如：`article--title**color`
+
+但是这个方法的缺点也很明显，完全受到个人控制，有成本
+
+### `CSS Module`
+
+使用一些工程化的工具来把 `class` 设置一个类似局部作用域的概念
+
+```css
+.title {
+  color: red;
+}
+// 转换后
+._cqacqca {
+  color: red;
+}
+```
+
+原理也很简单，就是使用 `css-loader` + `modules=true` ，把每个 `class` 转换成包含文件名和哈希值的一个唯一标识符，这样就能够保证不同 `css` 模块没有冲突，简单易用，可以使用工具；但是缺点也很明显，代码可读性差，难以 `debug`，同时不支持变量
+
+### `CSS IN JS`
+
+`css in js` 是将 `css` 直接嵌入到 `js` 中的模式，比如说：`React`
+
+优点：使用的工具很多，比如 `styled-components`等，同时样式和组件强相关
+
+缺点：大多都是运行时产生样式代码，所以说运行时开销较大
+
+### `iframe`
+
+`iframe` 拥有自己独立的文档模型，全局作用域、样式等，但是 `iframe` 的缺点很多，不建议使用
+
+缺点：
+
+- 性能开销，每一个 `iframe` 都是一个完整的文档环境，会有额外的性能开销
+- 通信机制复杂，需要使用 `postMessage` 来进行通信
+- `SEO`、可访问性收到影响
+- 跨域受限
+
+### `web component`
+
+用于封装 `html` 结构、`js` 逻辑的 `api`
+
+原理：得益于 `Shadow DOM` 的特性，`web component` 内部可以创建一个封闭的 `DOM` 环境，内部的样式不会泄漏到外部，外部的也不会影响内部
+
+```html
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>web component</title>
+    <style>
+      .wrapper {
+        color: red;
+        background: yellow;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrapper">这是外部的元素，应用了外部样式</div>
+    <my-custom-element></my-custom-element>
+
+    <script>
+      class MyCustomElement extends HTMLElement {
+        constructor() {
+          super() // 总是首先调用 super() 构造函数
+
+          // 创建一个 shadow root
+          const shadow = this.attachShadow({ mode: 'open' })
+
+          // 添加一些 HTML 内容到 shadow root
+          const wrapper = document.createElement('div')
+          wrapper.setAttribute('class', 'wrapper')
+          wrapper.textContent = '这是我的自定义元素内容!'
+
+          // 在 Shadow DOM 中定义样式
+          const style = document.createElement('style')
+          style.textContent = `
+                    .wrapper {
+                        color: white;
+                        background: blue;
+                        padding: 10px;
+                        border-radius: 8px;
+                    }
+                `
+
+          // 将样式和元素附加到 shadow DOM
+          shadow.appendChild(style)
+          shadow.appendChild(wrapper)
+        }
+      }
+
+      // 定义新的元素
+      customElements.define('my-custom-element', MyCustomElement)
+    </script>
+  </body>
+</html>
+```
+
+`web component` 浏览器原生支持，但是缺点也很明显
+
+缺点：
+
+- 兼容性：一些较老的浏览器不支持
+- 学习曲线大
+- 工具链生态没有`Vue`、`React` 好
+- 大量 `web component` 需要考虑性能
+- 管理维护复杂
+
+### `Vue scoped`
+
+这是 `Vue` 提供的样式隔离手段，通过在 `style` 标签上添加 `scoped` 属性即可，但是只适用于 `Vue` 框架
+
+### `css` `@layer` 规范
+
+[@layer](https://developer.mozilla.org/zh-CN/docs/Web/CSS/@layer) 声明了一个层叠层，同一层内的规则将级联在一起
+
+```css
+@layer framework, components, themes;
+// 这里就定义了优先级，从左往右，优先级慢慢提高
+@layer framework{
+    p{
+        color: red;
+    }
+}
+@layer components{
+    p{
+        color: blue;
+    }
+}
+@layer themes{
+    p{
+        color: black;
+    }
+}
+// 最后 color 会显示 black
+```
+
+优点：
+
+- 组织性更好
+- 官方定义
+- 明确的层叠控制
+- 模块化
+- 维护简单
+
+缺点：
+
+- 兼容性
+- 难以调试
